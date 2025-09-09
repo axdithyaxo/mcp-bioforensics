@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from mcp_bioforensics.db.models import Base, Trial
 from mcp_bioforensics.ingest.loaders import ingest_csv
 
+
 def test_ingest_csv(tmp_path):
     # Temporary CSV
     csvp = tmp_path / "sample.csv"
@@ -18,6 +19,7 @@ def test_ingest_csv(tmp_path):
 
     # Monkeypatch the loader to use this engine
     from mcp_bioforensics.db import session as db_session
+
     db_session.engine = test_engine
     db_session.SessionLocal.configure(bind=test_engine)
 

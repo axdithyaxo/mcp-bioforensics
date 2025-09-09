@@ -1,0 +1,3 @@
+trial_id,disease,phase,n_participants,summary,outcomes_text,status,sponsor,start_date,end_date
+NCT000001,Glioblastoma,II,120,"Phase II GBM trial","PFS, OS reported",Completed,NIH,2019-01-01,2021-03-01
+NCT000002,Breast Cancer,III,250,"HER2+ targeted therapy","ORR primary, AE secondary",Recruiting,ACME,2020-06-15,

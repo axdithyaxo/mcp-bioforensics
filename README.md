@@ -9,7 +9,7 @@ AI‑Assisted Clinical Trial Explorer built on the **Model Context Protocol (MCP
 
 ---
 
-## 🔍 What it does
+##  What it does
 - **Ingest** clinical/biomedical CSVs into PostgreSQL (canonical schema).
 - **Index** free‑text fields (summaries/outcomes) into **FAISS** with Sentence‑Transformers.
 - **Query** via **RAG**: natural language → relevant trials → structured JSON + Markdown table.
@@ -49,7 +49,7 @@ The server exposes typed **tools** (e.g., `list_trials`) discoverable by any MCP
 
 ---
 
-## 🧱 Project structure
+##  Project structure
 ```
 mcp-bioforensics/
 ├─ .github/workflows/ci.yml          # CI: lint, type-check, tests
@@ -73,7 +73,7 @@ mcp-bioforensics/
 
 ---
 
-## 🛠️ Commands (CLI)
+##  Commands (CLI)
 
 ```bash
 poetry run biofx ingest <path>     # CSV → Postgres (normalize schema)
@@ -86,7 +86,7 @@ poetry run biofx-mcp               # Start FastMCP server
 
 ---
 
-## 🧬 Data schema (canonical)
+##  Data schema (canonical)
 | column          | type        | notes                          |
 |-----------------|-------------|--------------------------------|
 | trial_id        | TEXT (PK)   | NCT/registry ID                |
@@ -102,7 +102,7 @@ poetry run biofx-mcp               # Start FastMCP server
 
 ---
 
-## 🧪 Testing & CI
+##  Testing & CI
 - **pytest** with coverage; deterministic test mode for RAG.
 - **ruff/black/mypy** enforce style and typing.
 - GitHub Actions runs on Python 3.10–3.12.
@@ -116,7 +116,7 @@ poetry run pytest -q
 
 ---
 
-## 🗺️ Roadmap (milestones)
+##  Roadmap (milestones)
 1. **Ingestion & Schema** — CSV→Postgres loader, phase/status normalization, Alembic migration.
 2. **Indexing** — Sentence‑Transformers embeddings, FAISS store, ID mapping.
 3. **Hybrid Retrieval + RAG** — FAISS top‑k + SQL filters → Pydantic‑validated JSON + Markdown table.
@@ -126,7 +126,7 @@ poetry run pytest -q
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 PRs welcome! Please run pre‑commit hooks and keep changes small/atomic.
 
 ```bash
@@ -136,17 +136,17 @@ pre-commit run --all-files
 
 ---
 
-## 🔒 Security
+##  Security
 See `SECURITY.md` for how to report vulnerabilities. No PII should be ingested.
 
 ---
 
-## 📄 License
+##  License
 MIT — see `LICENSE`.
 
 ---
 
-## 🙌 Acknowledgements
+##  Acknowledgements
 - MCP ecosystem & FastMCP
 - FAISS and Sentence‑Transformers
 - The open clinical research community

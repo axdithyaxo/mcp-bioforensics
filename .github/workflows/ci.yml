@@ -1,22 +1,30 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
-      matrix: { python-version: ["3.10","3.11","3.12"] }
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: ${{ matrix.python-version }} }
-      - uses: abatilo/actions-poetry@v3
-        with: { poetry-version: "1.8.3" }
-      - name: Install
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: '1.8.3'
+      - name: Install dependencies
         run: poetry install -E vector -E db
-      - name: Lint & type-check
-        run: |
-          poetry run ruff check .
-          poetry run ruff format --check .
-          poetry run mypy src
-      - name: Tests
+      - name: Lint (ruff)
+        run: poetry run ruff check .
+      - name: Format check (ruff)
+        run: poetry run ruff format --check .
+      - name: Type check (mypy)
+        run: poetry run mypy src
+      - name: Run tests
         run: poetry run pytest -q

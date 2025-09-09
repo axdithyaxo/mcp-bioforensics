@@ -1,5 +1,6 @@
-from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
 from mcp_bioforensics.db.models import Base, Trial
 from mcp_bioforensics.ingest.loaders import ingest_csv
 

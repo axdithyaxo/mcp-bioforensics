@@ -20,7 +20,7 @@ AI‑Assisted Clinical Trial Explorer built on the **Model Context Protocol (MCP
 
 ---
 
-## ⚡ Quickstart
+##  Quickstart
 
 ```bash
 # 1) Clone and install (with optional vector + db extras)

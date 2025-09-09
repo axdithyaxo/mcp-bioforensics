@@ -1,20 +1,73 @@
-[project]
+[tool.poetry]
 name = "mcp-bioforensics"
 version = "0.1.0"
-description = ""
-authors = [
-    {name = "Your Name",email = "you@example.com"}
-]
+description = "AI-Assisted Clinical Trial Explorer built on MCP. Ingestion → Indexing → Retrieval → Forensic reporting."
+authors = ["Aadithya Vishnu Sajeev <you@example.com>"]
+license = "MIT"
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
-    "gh (>=0.0.4,<0.0.5)"
-]
+packages = [{ include = "mcp_bioforensics", from = "src" }]
 
-[tool.poetry]
-packages = [{include = "mcp_bioforensics", from = "src"}]
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+mcp = ">=0.1.0"
+fastmcp = ">=0.1.0"
+langchain = ">=0.2.0"
+langchain-community = ">=0.2.0"
+pandas = ">=2.0"
+numpy = ">=1.26"
+scikit-learn = ">=1.4"
+SQLAlchemy = ">=2.0"
+alembic = ">=1.12"
+pydantic = ">=2.0"
+transformers = ">=4.39"
+sentence-transformers = ">=2.6"
+typer = { version = ">=0.9", extras = ["all"] }
+rich = ">=13.0"
+jinja2 = ">=3.1"
+markdown-it-py = ">=3.0"
+pyarrow = ">=15.0"
+python-dotenv = ">=1.0"
+faiss-cpu = { version = ">=1.7.4", optional = true, markers = "platform_system != 'Windows'" }
+psycopg2-binary = { version = ">=2.9", optional = true }
+accelerate = { version = ">=0.30", optional = true }
 
+[tool.poetry.extras]
+vector = ["faiss-cpu"]
+db = ["psycopg2-binary"]
+gpu = ["accelerate"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0"
+pytest-cov = ">=5.0"
+ruff = ">=0.5"
+black = ">=24.0"
+mypy = ">=1.8"
+pre-commit = ">=3.7"
+
+[tool.poetry.scripts]
+biofx = "mcp_bioforensics.cli:app"
+biofx-mcp = "mcp_bioforensics.server:run"
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+select = ["E","F","I","N","UP","B","S","C90"]
+ignore = ["E501"]
+src = ["src"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --cov=mcp_bioforensics --cov-report=term-missing"
+testpaths = ["tests"]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.9.0"]
 build-backend = "poetry.core.masonry.api"

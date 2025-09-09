@@ -6,11 +6,8 @@ authors = ["Aadithya Vishnu Sajeev <you@example.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{ include = "mcp_bioforensics", from = "src" }]
-
-[tool.poetry]
 homepage = "https://github.com/axdithyaxo/mcp-bioforensics"
 repository = "https://github.com/axdithyaxo/mcp-bioforensics"
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"

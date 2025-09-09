@@ -1,8 +1,10 @@
+from sqlalchemy import Date, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import String, Integer, Date
+
 
 class Base(DeclarativeBase):
     pass
+
 
 class Trial(Base):
     __tablename__ = "trials"

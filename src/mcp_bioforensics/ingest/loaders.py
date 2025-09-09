@@ -1,16 +1,20 @@
 import pandas as pd
+
 from mcp_bioforensics.db.models import Base, Trial
-from mcp_bioforensics.db.session import engine, SessionLocal
+from mcp_bioforensics.db.session import SessionLocal, engine
+
 
 def _normalize_phase(phase: str) -> str:
     if not isinstance(phase, str):
         return ""
     return phase.strip().upper().replace("PHASE ", "")
 
+
 def _normalize_status(status: str) -> str:
     if not isinstance(status, str):
         return ""
     return status.strip().capitalize()
+
 
 def ingest_csv(path: str) -> int:
     """Ingest CSV into DB, returns number of rows inserted/merged."""
@@ -29,7 +33,9 @@ def ingest_csv(path: str) -> int:
                 trial_id=row["trial_id"],
                 disease=row.get("disease", ""),
                 phase=row.get("phase", ""),
-                n_participants=int(row.get("n_participants", 0)) if pd.notna(row.get("n_participants", 0)) else 0,
+                n_participants=int(row.get("n_participants", 0))
+                if pd.notna(row.get("n_participants", 0))
+                else 0,
                 summary=row.get("summary", ""),
                 outcomes_text=row.get("outcomes_text", ""),
                 status=row.get("status", ""),

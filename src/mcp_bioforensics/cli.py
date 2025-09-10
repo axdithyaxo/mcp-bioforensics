@@ -1,5 +1,6 @@
 import typer
 from rich import print
+
 from mcp_bioforensics.ingest.loaders import ingest_csv
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)

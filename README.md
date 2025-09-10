@@ -5,16 +5,16 @@
 
 AI‑Assisted Clinical Trial Explorer built on the **Model Context Protocol (MCP)**. 
 
-**Ingestion → Indexing (FAISS) → Hybrid Retrieval (FAISS + SQL) → RAG Answers → Forensic Reporting**
+**Ingestion → Indexing (FAISS) → Hybrid Retrieval (FAISS + SQL) → RAG Answers (planned) → Forensic Reporting (planned)**
 
 ---
 
 ##  What it does
-- **Ingest** clinical/biomedical CSVs into PostgreSQL (canonical schema).
-- **Index** free‑text fields (summaries/outcomes) into **FAISS** with Sentence‑Transformers.
-- **Query** via **RAG**: natural language → relevant trials → structured JSON + Markdown table.
-- **Forensics**: dataset hashing, anomaly checks (missing outcomes, duplicate IDs, impossible dates).
-- **Report**: export Markdown/CSV summaries by disease/phase; optional PDF via pandoc.
+- **Ingest** clinical/biomedical CSVs (sample and larger datasets like `ctg-studies.csv`) into SQLite by default (PostgreSQL optional).
+- **Index** free‑text fields (summaries/outcomes) into **FAISS** with Sentence‑Transformers. FAISS index must be built before running search or MCP tools like `search_trials`.
+- **Query** via **Hybrid Retrieval**: semantic FAISS + SQL filters implemented; RAG answers planned for PR3.
+- **Forensics**: dataset hashing, anomaly checks (missing outcomes, duplicate IDs, impossible dates) planned.
+- **Report**: export Markdown/CSV summaries by disease/phase; optional PDF via pandoc planned.
 
 > Built for reliability and auditability: typed I/O, deterministic test mode, CI on 3.10–3.12.
 
@@ -35,7 +35,7 @@ poetry run biofx --help
 poetry run biofx ingest data/samples/trials_sample.csv
 poetry run biofx index
 
-# 4) Ask a question (stubbed until PR2/PR3 completes)
+# 4) Ask a question (runs hybrid search over indexed data)
 poetry run biofx query "Phase II trials for glioblastoma with >100 participants"
 ```
 
@@ -43,7 +43,7 @@ poetry run biofx query "Phase II trials for glioblastoma with >100 participants"
 ```bash
 poetry run biofx-mcp
 ```
-The server exposes typed **tools** (e.g., `list_trials`) discoverable by any MCP‑compatible client.
+The server exposes typed **tools** (e.g., `ping`, `list_datasets`, `get_trial`, `search_trials`, `build_vector_index`) discoverable by any MCP‑compatible client.
 
 > Tip: If you use Claude Desktop, add this server to your MCP config and run a sample tool call.
 
@@ -63,12 +63,12 @@ mcp-bioforensics/
 │  ├─ cli.py                         # Typer CLI (ingest/index/query)
 │  ├─ db/
 │  │  └─ models.py                   # SQLAlchemy ORM (Trial)
-│  ├─ ingest/                        # loaders/cleaners (next PR)
-│  ├─ index/                         # embeddings + FAISS (next PR)
-│  ├─ retrieval/                     # hybrid retriever + RAG (next PR)
-│  ├─ forensics/                     # hashing/checks (next PR)
-│  └─ reporting/                     # templating/export (next PR)
-└─ tests/                            # pytest suites
+│  ├─ ingest/                        # loaders/cleaners (implemented in PR1)
+│  ├─ index/                         # embeddings + FAISS (implemented in PR2)
+│  ├─ retrieval/                     # hybrid retriever + RAG (hybrid implemented in PR2; RAG planned PR3)
+│  ├─ forensics/                     # hashing/checks (planned)
+│  └─ reporting/                     # templating/export (planned)
+└─ tests/                            # pytest suites (ingestion and smoke tests; more coming)
 ```
 
 ---
@@ -76,13 +76,13 @@ mcp-bioforensics/
 ##  Commands (CLI)
 
 ```bash
-poetry run biofx ingest <path>     # CSV → Postgres (normalize schema)
-poetry run biofx index             # Build/update FAISS index
-poetry run biofx query "..."       # RAG query → JSON + Markdown table
-poetry run biofx-mcp               # Start FastMCP server
+poetry run biofx ingest <path>     # CSV → SQLite (default) or Postgres (normalize schema)
+poetry run biofx index             # Build/update FAISS index (required before search)
+poetry run biofx query "..."       # Hybrid retrieval query → JSON + Markdown table
+poetry run biofx-mcp               # Start FastMCP server exposing tools (ping, list_datasets, get_trial, search_trials, build_vector_index)
 ```
 
-> Until PR2/PR3, commands are stubs that print progress. They’re wired for tests/CI already.
+> Ingestion, indexing, and query commands are functional. MCP server exposes discovery and search tools.
 
 ---
 
@@ -90,6 +90,7 @@ poetry run biofx-mcp               # Start FastMCP server
 | column          | type        | notes                          |
 |-----------------|-------------|--------------------------------|
 | trial_id        | TEXT (PK)   | NCT/registry ID                |
+| dataset_id      | TEXT        | dataset identifier (supports multiple CSVs) |
 | disease         | TEXT        | normalized disease label       |
 | phase           | TEXT        | {I, II, III, IV}               |
 | n_participants  | INT         | trial size                     |
@@ -103,7 +104,8 @@ poetry run biofx-mcp               # Start FastMCP server
 ---
 
 ##  Testing & CI
-- **pytest** with coverage; deterministic test mode for RAG.
+- **pytest** with partial coverage (~60%); ingestion and smoke tests included.
+- Retrieval and indexing tests coming in upcoming milestones.
 - **ruff/black/mypy** enforce style and typing.
 - GitHub Actions runs on Python 3.10–3.12.
 
@@ -117,12 +119,12 @@ poetry run pytest -q
 ---
 
 ##  Roadmap (milestones)
-1. **Ingestion & Schema** — CSV→Postgres loader, phase/status normalization, Alembic migration.
-2. **Indexing** — Sentence‑Transformers embeddings, FAISS store, ID mapping.
-3. **Hybrid Retrieval + RAG** — FAISS top‑k + SQL filters → Pydantic‑validated JSON + Markdown table.
-4. **Forensics** — dataset hashing, duplicate/outcome checks, impossible date flags.
-5. **Reporting** — Jinja2 templates → Markdown/CSV (optional PDF via pandoc).
-6. **Eval Harness** — tiny labeled QA set, precision@k + regression tests.
+1. **Ingestion & Schema** — CSV→SQLite/Postgres loader, phase/status normalization, Alembic migration (completed).
+2. **Indexing** — Sentence‑Transformers embeddings, FAISS store, ID mapping (completed).
+3. **Hybrid Retrieval** — semantic FAISS + SQL filters → Pydantic‑validated JSON + Markdown table (completed).
+4. **Forensics** — dataset hashing, duplicate/outcome checks, impossible date flags (planned).
+5. **Reporting** — Jinja2 templates → Markdown/CSV (optional PDF via pandoc) (planned).
+6. **Eval Harness** — tiny labeled QA set, precision@k + regression tests (planned).
 
 ---
 

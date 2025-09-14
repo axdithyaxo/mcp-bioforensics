@@ -94,18 +94,18 @@ From "MCP BioForensics", run list_datasets.
 ```json
 [
   {
-    "dataset_id": "ctg2025_1",
-    "name": "ClinicalTrials.gov 2025 Full",
+    "dataset_id": "ctg2025",
+    "name": "ClinicalTrials.gov 2025",
     "row_count": 17732,
-    "ingested_at": "2025-09-10T10:32:00",
-    "source_path": "data/ctg-studies.csv"
+    "ingested_at": "2025-09-10",
+    "source_path": "data/samples/ctg-studies.csv"
   },
   {
-    "dataset_id": "ctg2025_2",
-    "name": "Supplemental Oncology Trials",
+    "dataset_id": "ctg2025_1",
+    "name": "ClinicalTrials.gov Glioblastoma Slice",
     "row_count": 2292,
-    "ingested_at": "2025-09-10T10:40:00",
-    "source_path": "data/oncology-extra.csv"
+    "ingested_at": "2025-09-10",
+    "source_path": "data/samples/ctg-studies_1.csv"
   }
 ]
 ```
@@ -129,12 +129,12 @@ trial_id="NCT04253873"
   "disease": "High-grade Gliomas",
   "phase": "PHASE2",
   "n_participants": 40,
-  "summary": "...",
-  "outcomes_text": "...",
-  "status": "Completed",
-  "sponsor": "XYZ Pharma",
-  "start_date": "2023-01-15",
-  "end_date": "2024-06-30"
+  "status": "Unknown",
+  "sponsor": "WuHui",
+  "start_date": null,
+  "end_date": null,
+  "summary": "Gliomas are the most common malignant tumors of the central nervous system and are highly invasive. Gliomas account for one-third of central nervous system tumors in adults and children. Interstitial astrocytomas and glioblastomas are also called high-grade gliomas, accounting for 77.5% of all gliomas.",
+  "outcomes_text": "6-month PFS rate, Proportion of progression-free survival up to 6 months, up to 1 year"
 }
 ```
 
@@ -153,7 +153,7 @@ From "MCP BioForensics", run build_vector_index.
 {
   "dim": 384,
   "count": 20024,
-  "index_path": "/Users/<you>/.local/share/mcp-bioforensics/index/faiss.index"
+  "index_path": "/Users/aadithya/.local/share/mcp-bioforensics/index/faiss.index"
 }
 ```
 
@@ -171,12 +171,31 @@ Performs hybrid semantic and structured search over trials.
 }
 ```
 
+**Sample Response:**  
+```json
+[
+  {"dataset_id":"ctg2025_1","trial_id":"NCT06396481","score":0.7256543636322021,"disease":"GBM|DIPG Brain Tumor|Medulloblastoma","phase":"EARLY_PHASE1","n_participants":25},
+  {"dataset_id":"ctg2025_1","trial_id":"NCT06929819","score":0.7125737071037292,"disease":"Glioblastoma|Brain Tumor, Primary|Brain Tumor - Metastatic","phase":"","n_participants":200},
+  {"dataset_id":"ctg2025_1","trial_id":"NCT03776071","score":0.695147693157196,"disease":"Glioblastoma","phase":"PHASE3","n_participants":260},
+  {"dataset_id":"ctg2025_1","trial_id":"NCT04253873","score":0.691148042678833,"disease":"High-grade Gliomas","phase":"PHASE2","n_participants":40},
+  {"dataset_id":"ctg2025_1","trial_id":"NCT01044966","score":0.675021231174469,"disease":"Glioblastoma Multiforme|Glioma|Astrocytoma|Brain Tumor","phase":"PHASE1|PHASE2","n_participants":12}
+]
+```
+
 - Query with phase filter:  
 ```json
 {
   "query": "brain tumor",
   "options": {"phase": "PHASE3", "top_k": 5}
 }
+```
+
+**Sample Response:**  
+```json
+[
+  {"dataset_id":"ctg2025_1","trial_id":"NCT03776071","score":0.695147693157196,"disease":"Glioblastoma","phase":"PHASE3","n_participants":260},
+  {"dataset_id":"ctg2025_1","trial_id":"NCT00615186","score":0.641029953956604,"disease":"Glioblastoma Multiforme","phase":"PHASE3","n_participants":9}
+]
 ```
 
 - Query with minimum participants:  
@@ -187,16 +206,15 @@ Performs hybrid semantic and structured search over trials.
 }
 ```
 
-**Sample Response (top result):**  
+**Sample Response:**  
 ```json
-{
-  "dataset_id": "ctg2025_1",
-  "trial_id": "NCT06396481",
-  "score": 0.726,
-  "disease": "GBM|DIPG Brain Tumor|Medulloblastoma",
-  "phase": "EARLY_PHASE1",
-  "n_participants": 25
-}
+[
+  {"dataset_id":"ctg2025","trial_id":"NCT04704817","score":0.5311051607131958,"disease":"Colorectal Disorders","phase":"","n_participants":1000},
+  {"dataset_id":"ctg2025","trial_id":"NCT02701907","score":0.5175670385360718,"disease":"Metastatic Cancers","phase":"","n_participants":182},
+  {"dataset_id":"ctg2025","trial_id":"NCT02366884","score":0.5099713206291199,"disease":"Neoplasms","phase":"PHASE2","n_participants":250},
+  {"dataset_id":"ctg2025","trial_id":"NCT04682470","score":0.5048232078552246,"disease":"Second Cancer|Survivorship|Fertility Issues|Distress, Emotional|Lifestyle|Genetic Disease|Cancer","phase":"","n_participants":4000},
+  {"dataset_id":"ctg2025","trial_id":"NCT00003329","score":0.4950706958770752,"disease":"Breast Cancer|Colorectal Cancer|Lung Cancer|Prostate Cancer","phase":"","n_participants":4000}
+]
 ```
 
 ---
@@ -215,6 +233,16 @@ Returns a `messages` array containing a compact context built from search result
 
 ---
 
+## Why not just grep a CSV?
+
+Traditional CSV filtering struggles with fuzzy language, synonyms, and multi-field reasoning. MCP BioForensics combines:
+- **Semantic search (FAISS + embeddings):** finds conceptually similar trials even if the wording differs (e.g., “GBM” vs “glioblastoma”).
+- **Structured filters (SQL):** enforces hard constraints like `phase == PHASE3` and `n_participants >= 150`.
+- **Multiple datasets:** unifies results across many ingested CSVs with a shared schema.
+This hybrid approach returns fewer, better-ranked, constraint-satisfying trials than keyword filtering alone.
+
+---
+
 ## Data Schema (Canonical)
 
 | Column          | Type      | Description                             |
@@ -222,7 +250,7 @@ Returns a `messages` array containing a compact context built from search result
 | trial_id        | TEXT (PK) | Unique NCT/registry identifier        |
 | dataset_id      | TEXT      | Dataset identifier (supports multiple)|
 | disease         | TEXT      | Normalized disease label               |
-| phase           | TEXT      | Canonical phase codes (I, II, III, IV)|
+| phase           | TEXT      | Canonical codes: `EARLY_PHASE1`, `PHASE1`, `PHASE1|PHASE2`, `PHASE2`, `PHASE2|PHASE3`, `PHASE3`, `PHASE4` |
 | n_participants  | INT       | Number of participants in trial       |
 | summary         | TEXT      | Brief trial description                |
 | outcomes_text   | TEXT      | Primary and secondary outcomes        |
@@ -237,18 +265,46 @@ Returns a `messages` array containing a compact context built from search result
 
 ### Hybrid Search Example
 
-**Query:**  
-```
-Phase II trials for glioblastoma with >100 participants
+**Query:** Show me Phase 2 breast cancer trials with 200+ patients
+
+**search_trials request**
+```json
+{
+  "query": "breast cancer",
+  "phase": "PHASE2",
+  "min_participants": 200,
+  "top_k": 10
+}
 ```
 
-**Top 3 Results:**
+**Top result**
+```json
+{
+  "dataset_id": "ctg2025",
+  "trial_id": "NCT00496288",
+  "score": 0.5863845348358154,
+  "disease": "Breast Cancer",
+  "phase": "PHASE2",
+  "n_participants": 240
+}
+```
 
-| Trial ID    | Disease           | Phase   | Participants | Dataset    |
-|-------------|-------------------|---------|--------------|------------|
-| NCT03776071 | Glioblastoma      | PHASE3  | 260          | ctg2025_1  |
-| NCT04253873 | High-grade Gliomas| PHASE2  | 150          | ctg2025_1  |
-| NCT04704817 | Glioblastoma      | PHASE2  | 180          | ctg2025    |
+**get_trial details**
+```json
+{
+  "dataset_id": "ctg2025",
+  "trial_id": "NCT00496288",
+  "disease": "Breast Cancer",
+  "phase": "PHASE2",
+  "n_participants": 240,
+  "status": "Unknown",
+  "sponsor": "Assaf-Harofeh Medical Center",
+  "start_date": null,
+  "end_date": null,
+  "summary": "Women with BRCA germline mutations face a very high risk of developing breast cancer during their lives...",
+  "outcomes_text": "Rate of contralateral breast cancer ... 15 years"
+}
+```
 
 ---
 
@@ -318,6 +374,21 @@ poetry run pytest -q
 
 ---
 
+## Using with Claude Desktop (MCP client)
+
+1. Open Claude Desktop → Settings → **MCP Servers** → **Add New**.
+2. Command: point to your venv Python and module, e.g.:
+   ```
+   /path/to/.venv/bin/python -m mcp_bioforensics.server
+   ```
+3. Test with:
+   - `ping` → expect `{ "ok": true }`
+   - `list_datasets` → expect two datasets with counts 17,732 and 2,292
+   - `build_vector_index` → expect `dim=384`, `count≈20,024`
+   - `search_trials` with payloads shown above
+
+---
+
 ## Contributing
 
 Contributions are welcome! Please run pre-commit hooks before submitting pull requests:
@@ -332,6 +403,19 @@ pre-commit run --all-files
 ## Security
 
 No personally identifiable information (PII) is ingested. For vulnerability reporting, please refer to `SECURITY.md`.
+
+---
+
+## Large datasets & Git LFS
+
+Some ClinicalTrials.gov CSVs exceed GitHub’s 50 MB recommendation. Store big files in Git LFS:
+```bash
+git lfs install
+git lfs track "data/samples/*.csv"
+git add .gitattributes
+git add data/samples
+git commit -m "Track large CSVs with Git LFS"
+```
 
 ---
 

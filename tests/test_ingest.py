@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -5,7 +7,7 @@ from mcp_bioforensics.db.models import Base, Trial
 from mcp_bioforensics.ingest.loaders import ingest_csv
 
 
-def test_ingest_csv(tmp_path):
+def test_ingest_csv(tmp_path: Path) -> None:
     # Temporary CSV
     csvp = tmp_path / "sample.csv"
     csvp.write_text(
@@ -23,7 +25,7 @@ def test_ingest_csv(tmp_path):
     db_session.engine = test_engine
     db_session.SessionLocal.configure(bind=test_engine)
 
-    n = ingest_csv(str(csvp))
+    n = ingest_csv(str(csvp), dataset_id="test_ds", dataset_name="Test Dataset")
     assert n == 1
 
     with Session(test_engine) as s:

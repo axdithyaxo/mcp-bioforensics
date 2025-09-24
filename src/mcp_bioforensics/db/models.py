@@ -4,7 +4,7 @@ from sqlalchemy import JSON, Date, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-class Base(DeclarativeBase):  # type: ignore[misc]
+class Base(DeclarativeBase): 
     """SQLAlchemy 2.0 Declarative base.
 
     mypy may not recognize `DeclarativeBase` without sqlalchemy-stubs; we suppress the

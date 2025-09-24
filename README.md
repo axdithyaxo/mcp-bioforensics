@@ -7,6 +7,17 @@
 
 ---
 
+
+## Demo
+
+Quick preview (GIF):
+
+![Demo](assets/Bioforensics.gif)
+
+
+- [Full Video Demo](https://drive.google.com/file/d/1-UEMZOvZ6obhHe4VE2NSM16j2U6VDdJI/view?usp=share_link)
+
+
 ## Architecture & Workflow
 
 ```

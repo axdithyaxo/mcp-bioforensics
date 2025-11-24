@@ -23,7 +23,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 try:  # pragma: no cover - import guard
-    import faiss # type: ignore[import-untyped]
+    import faiss
 except Exception as exc:  # pragma: no cover - helpful error
     raise ImportError(
         "faiss is required. Install the optional extra: `poetry install -E vector`"

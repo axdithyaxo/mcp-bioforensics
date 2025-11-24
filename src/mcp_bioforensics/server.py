@@ -9,6 +9,8 @@ from fastmcp import FastMCP
 
 from mcp_bioforensics.db.models import DatasetRegistry, Trial
 from mcp_bioforensics.db.session import SessionLocal
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -185,6 +187,66 @@ def _parse_payload(payload: Any) -> tuple[str, str | None, str | None, str | Non
     return query, phase, disease, status, min_participants, top_k
 
 
+def _coerce_sql_payload(
+    payload: Any,
+) -> tuple[str, Any, bool | None, bool | None, int]:
+    """Normalize payload for SQL execution.
+
+    Returns (sql, params, commit_flag, fetch_flag, fetch_limit).
+    """
+
+    sql_text = ""
+    params: Any = None
+    commit_flag: bool | None = None
+    fetch_flag: bool | None = None
+    fetch_limit = 50
+
+    # Accept either raw SQL strings, JSON strings, or dict payloads
+    if isinstance(payload, str):
+        maybe_dict = _payload_to_dict(payload)
+        if maybe_dict is None:
+            sql_text = payload.strip()
+            return sql_text, None, None, None, fetch_limit
+        payload_dict = maybe_dict
+    else:
+        payload_dict = _payload_to_dict(payload)
+
+    if payload_dict is None:
+        return "", None, None, None, fetch_limit
+
+    raw_sql = payload_dict.get("sql") or payload_dict.get("query")
+    if isinstance(raw_sql, str):
+        sql_text = raw_sql.strip()
+
+    params_candidate = payload_dict.get("params")
+    if isinstance(params_candidate, (dict, list, tuple)):
+        params = params_candidate
+
+    commit_value = payload_dict.get("commit")
+    if isinstance(commit_value, bool):
+        commit_flag = commit_value
+
+    fetch_value = payload_dict.get("fetch")
+    if isinstance(fetch_value, bool):
+        fetch_flag = fetch_value
+
+    limit_value = payload_dict.get("fetch_limit") or payload_dict.get("limit")
+    if limit_value is not None:
+        try:
+            fetch_limit = max(1, int(limit_value))
+        except Exception:
+            pass
+
+    return sql_text, params, commit_flag, fetch_flag, fetch_limit
+
+
+def _infer_sql_command(sql: str) -> str:
+    for token in sql.strip().split():
+        if token:
+            return token.upper()
+    return ""
+
+
 @app.tool()  # type: ignore[misc]
 def search_trials(payload: Any) -> list[dict[str, Any]]:
     """Permissive search over trials via a single JSON `payload`.
@@ -233,6 +295,73 @@ def search_trials(payload: Any) -> list[dict[str, Any]]:
         }
         for r in results
     ]
+
+
+@app.tool()  # type: ignore[misc]
+def execute_sql(payload: Any) -> dict[str, Any]:
+    """Execute a SQL statement against the bioforensics.db SQLite database.
+
+    Payload options (dict or JSON string):
+      - sql / query: SQL string to execute (required)
+      - params: optional dict/list for parameterized statements
+      - commit: bool (default auto: True for mutating statements, False otherwise)
+      - fetch: bool (default auto: True for read-only statements)
+      - fetch_limit / limit: max rows to return when fetching (default 50)
+
+    A plain string payload is treated as the SQL to run.
+    """
+
+    sql_text, params, commit_flag, fetch_flag, fetch_limit = _coerce_sql_payload(payload)
+    if not sql_text:
+        return {"ok": False, "error": "No SQL provided."}
+
+    command = _infer_sql_command(sql_text)
+    mutating_commands = {
+        "INSERT",
+        "UPDATE",
+        "DELETE",
+        "CREATE",
+        "DROP",
+        "ALTER",
+        "REPLACE",
+        "TRUNCATE",
+        "ATTACH",
+        "DETACH",
+    }
+
+    should_commit = commit_flag if commit_flag is not None else command in mutating_commands
+    should_fetch = fetch_flag if fetch_flag is not None else command not in mutating_commands
+
+    # Clamp fetch_limit to a reasonable range if fetching is requested
+    if not should_fetch:
+        fetch_limit = 0
+    else:
+        fetch_limit = max(1, min(fetch_limit, 500))
+
+    try:
+        with SessionLocal() as session:
+            result = session.execute(text(sql_text), params) if params is not None else session.execute(text(sql_text))
+
+            rows: list[dict[str, Any]] | None = None
+            if should_fetch:
+                fetched = result.mappings().fetchmany(fetch_limit)
+                rows = [dict(row) for row in fetched]
+
+            rowcount = result.rowcount
+
+            if should_commit:
+                session.commit()
+
+    except SQLAlchemyError as exc:
+        return {"ok": False, "error": str(exc.__cause__ or exc)}
+    except Exception as exc:  # pragma: no cover - defensive catch for unexpected issues
+        return {"ok": False, "error": str(exc)}
+
+    response: dict[str, Any] = {"ok": True, "command": command, "rowcount": rowcount}
+    if should_fetch:
+        response["rows"] = rows or []
+
+    return response
 
 
 @app.tool()  # type: ignore[misc]

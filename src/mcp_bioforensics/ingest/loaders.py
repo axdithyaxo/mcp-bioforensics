@@ -1,6 +1,6 @@
 from datetime import date, datetime
-from typing import Any, Optional, cast
-from datetime import date
+from typing import Any
+
 import pandas as pd
 
 from mcp_bioforensics.db.models import Base, DatasetRegistry, Trial

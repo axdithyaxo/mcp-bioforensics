@@ -10,7 +10,7 @@ from mcp_bioforensics.retrieval.hybrid import hybrid_search
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
 
-@app.command()  
+@app.command()  # type: ignore[misc]
 def ingest(
     path: str,
     dataset: str = typer.Option(..., "--dataset", "-d", help="Dataset ID to tag rows with"),
@@ -24,7 +24,7 @@ def ingest(
     )
 
 
-@app.command()  
+@app.command()  # type: ignore[misc]
 def index() -> None:
     """Build FAISS index (stub)."""
     with SessionLocal() as s:
@@ -35,7 +35,7 @@ def index() -> None:
     )
 
 
-@app.command()  
+@app.command()  # type: ignore[misc]
 def query(
     q: str,
     phase: str | None = typer.Option(None, "--phase", help="Filter by trial phase"),
